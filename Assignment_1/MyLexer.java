@@ -5,7 +5,6 @@
 */
 
 import java.io.*;
-import java.util.regex.Pattern;
 import java.util.Scanner;
 import java.util.List;
 import java.util.ArrayList;
@@ -24,36 +23,71 @@ public class MyLexer
 	public void parse()
 	{
 		String t = new String();
-		System.out.println(fileContents.length());
+		//System.out.println(fileContents.length());
 		for(int i = 0; i < fileContents.length(); i++)
 		{
+			//get current character
 			char currChar = fileContents.charAt(i);
+			//set peek character to null char
 			char peek = '\0';
+			//check if at end of file
 			if (i != fileContents.length()-1)
 				peek = fileContents.charAt(i+1);
+			//
 			t += currChar;
-			if(peek != ' ')
+
+			if(t.matches("[A-Za-z]+[\\w]*"))
 			{
-				if(tokens.get(t) != null && tokens.get(t+peek) != null)
-				{
-					output.add("<" + tokens.get(t+peek) + ">");
-					t = "";
-				}
-				else if(tokens.get(t) != null)
-				{
-					output.add("<" + tokens.get(t) + ">");
-					t = "";
-				}
+				System.out.println("id " + t);
+				//output.add(t);
+				t = "";
 			}
-			/*if(currChar == '+' && (fileContents.charAt(i+1) == '+' || fileContents.charAt(i+1) == '='))
-				output.add("<" + tokens.get(currChar+fileContents.charAt(i+1)) + ">");
-			else if(currChar == '-' && (fileContents.charAt(i+1) == '-' || fileContents.charAt(i+1) == '-'))
-				output.add("<" + tokens.get(currChar+fileContents.charAt(i+1)) + ">");
-			else if((currChar == '=' || currChar == '<' || currChar == '>' || currChar == '!') && fileContents.charAt(i+1) == '=')
-				output.add("<" + tokens.get(currChar+"=")+">");
-			else 
-			{	
-			}*/
+			else if (t.matches("-?[0-9]+(.[0-9]+)?"))
+			{
+				System.out.println("num " + t);
+				//output.add(t);
+				t = "";
+			}
+			else if(t.matches("\""))
+			{
+				while(peek != '\"	')
+				{
+					t+=peek;
+					peek = fileContents.charAt(i++);
+				}
+				output.add("<" +tokens.get("..")+">");
+				t ="";
+			}
+			else if(t.matches("[//][\\w]*"))
+			{
+				while(peek != '\n')
+				{
+					t+=peek;
+					peek = fileContents.charAt(i++);
+				}
+				t = "";
+			}
+			//else if(t.matches("[/*][[\\w]*[\*/]"))
+			//{
+			//	t = "";
+			//}
+			else if(tokens.get(t+peek) != null)
+			{
+				output.add("<" + tokens.get(t+peek) + ">");
+				i++;
+				t = "";
+			}
+			else if(tokens.get(t) != null)
+			{
+				output.add("<" + tokens.get(t) + ">");
+				t = "";
+			}
+			else
+			{
+				System.out.println("Error "+t);
+				output.add(t);
+				t = "";
+			}
 		}
 
 	}
@@ -61,7 +95,6 @@ public class MyLexer
 	//reads in tokens and puts them in the tokens hashmap
 	public void readTokens(String fname)
 	{
-		System.out.println(fileContents + "can access fileContents here");
 		try
 		{
 			BufferedReader br = new BufferedReader(new FileReader(fname));
@@ -128,7 +161,9 @@ public class MyLexer
 			}*/
 			for(int i = 0; i < ml.output.size(); i++)
 			{
-				System.out.println(ml.output.get(i));
+				System.out.print(ml.output.get(i) + " ");
+				if(i%5 == 0 && i != 0)
+					System.out.println();
 			}
 		}
 	}
