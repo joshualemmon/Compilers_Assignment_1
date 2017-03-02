@@ -24,33 +24,37 @@ public class MyLexer
 	public void parse()
 	{
 		String t = new String();
-		/*for(int i = 0; i < fileContents.size(); i++)
+		System.out.println(fileContents.length());
+		for(int i = 0; i < fileContents.length(); i++)
 		{
-			char currChar = fileContents.getChar(i);
-			char peek;
-			if (i != fileContents.size()-1)
-				peek = fileContents.getChar(i+1);
+			char currChar = fileContents.charAt(i);
+			char peek = '\0';
+			if (i != fileContents.length()-1)
+				peek = fileContents.charAt(i+1);
 			t += currChar;
-			if(tokens.getValue(t) != null && tokens.getValue(t+peek) != null)
+			if(peek != ' ')
 			{
-				output.add("<" + tokens.getValue(t+peek) + ">");
-				t = "";
+				if(tokens.get(t) != null && tokens.get(t+peek) != null)
+				{
+					output.add("<" + tokens.get(t+peek) + ">");
+					t = "";
+				}
+				else if(tokens.get(t) != null)
+				{
+					output.add("<" + tokens.get(t) + ">");
+					t = "";
+				}
 			}
-			else if(tokens.getValue(t) != null)
-			{
-				output.add("<" + tokens.getValue(t) + ">");
-				t = "";
-			}
-			/*if(currChar == '+' && (fileContents.getChar(i+1) == '+' || fileContents.getChar(i+1) == '='))
-				output.add("<" + tokens.getValue(currChar+fileContents.getChar(i+1)) + ">");
-			else if(currChar == '-' && (fileContents.getChar(i+1) == '-' || fileContents.getChar(i+1) == '-'))
-				output.add("<" + tokens.getValue(currChar+fileContents.getChar(i+1)) + ">");
-			else if((currChar == '=' || currChar == '<' || currChar == '>' || currChar == '!') && fileContents.getChar(i+1) == '=')
-				output.add("<" + tokens.getValue(currChar+"=")+">");
+			/*if(currChar == '+' && (fileContents.charAt(i+1) == '+' || fileContents.charAt(i+1) == '='))
+				output.add("<" + tokens.get(currChar+fileContents.charAt(i+1)) + ">");
+			else if(currChar == '-' && (fileContents.charAt(i+1) == '-' || fileContents.charAt(i+1) == '-'))
+				output.add("<" + tokens.get(currChar+fileContents.charAt(i+1)) + ">");
+			else if((currChar == '=' || currChar == '<' || currChar == '>' || currChar == '!') && fileContents.charAt(i+1) == '=')
+				output.add("<" + tokens.get(currChar+"=")+">");
 			else 
 			{	
 			}*/
-		//}
+		}
 
 	}
 
@@ -94,6 +98,7 @@ public class MyLexer
 		{
 			Scanner sc = new Scanner(new File(fname));
 			fileContents = sc.useDelimiter("\\Z").next();
+			System.out.println(fileContents);
 			sc.close();
 		}catch(IOException ioe)
 		{
@@ -118,7 +123,7 @@ public class MyLexer
 			while(it.hasNext())
 			{
 				Map.Entry pair = (Map.Entry)it.next();
-				System.out.println(pair.getKey() + " " + pair.getValue());
+				System.out.println(pair.getKey() + " " + pair.get());
 				it.remove();
 			}*/
 			for(int i = 0; i < ml.output.size(); i++)
