@@ -28,31 +28,6 @@ public class MyLexer
 		return s.substring(1,s.length()-1);
 	}
 
-	/*public void setSymbolTable()
-	{
-		String typeStr = new String();
-		for(int i = 0; i < output.size(); i++)
-		{
-			String token = stripToken(output.get(i));
-			if(token.substring(0,2).equals("Id"))
-			{
-				String[] split = token.split(", ");
-				int j = i;
-				String s = new String();
-				s = stripToken(output.get(j-1));
-				j--;
-				while(!s.equals("class") || !(s.equals("String"))||tokens.get(s) == null || !s.substring(0,6).equals("Number"))
-				{
-					token+=s;
-					s = stripToken(j);
-					j--;
-				}
-
-			}
-
-		}
-	}*/
-
 	public String getSymbolNum(String t)
 	{
 		for(int i=0; i< symbolTable.length;i++)
@@ -63,6 +38,7 @@ public class MyLexer
 
 	public void addToTable(String t)
 	{
+		//increase symbol table size if idCount exceeds the table size
 		if(idCount > symbolTable.length)
 		{
 			String[][] temp = new String[idCount][3];
@@ -156,8 +132,7 @@ public class MyLexer
 				{
 					//if t is a new id
 					if(isNewSymbol(t))
-					{	
-						System.out.println("New symbol found");
+					{
 						idCount++;
 						addToTable(t);
 						symbolTable[idCount-1][1] = "no type";
@@ -165,10 +140,8 @@ public class MyLexer
 						int j = output.size()-1;
 						String prevToken = stripToken(output.get(j));
 						String type = new String();
-						System.out.println("previous token is: " + prevToken);
 						if(prevToken.equals("T_cls_brkt")|| prevToken.substring(0,3).equals("Pri")|| prevToken.substring(0,5).equals("T_ref")|| prevToken.equals("T_class"))
 						{
-							System.out.println("in if: previous token is: " + prevToken);
 							if(prevToken.equals("T_cls_brkt"))
 							{
 								type = type + "]";
@@ -185,13 +158,27 @@ public class MyLexer
 							}
 							else
 							{
-								System.out.println("is string or primitive: " + type);
-								System.out.println("previous token: " + prevToken);
 								String temp[] = prevToken.split(", ");
 								type = temp[1] + type;
 							}
-							System.out.println("prevToken: " + prevToken + " type: " + type);
 							symbolTable[idCount-1][1] = type;
+						}
+						else if(prevToken.equals("T_Comma"))
+						{
+							j--;
+							prevToken = stripToken(output.get(j));
+							System.out.println("token before comma is: " + prevToken);
+							while(prevToken.substring(0,2).equals("Id") == false)
+							{
+								j--;
+								prevToken = stripToken(output.get(j));
+								System.out.println("token: " + prevToken);
+							}
+							String[] temp = prevToken.split(", ");
+							System.out.println("found token: " + prevToken);
+							System.out.println("found id: " + symbolTable[Integer.parseInt(temp[1])-1][0]);
+							System.out.println("found type: " + symbolTable[Integer.parseInt(temp[1])-1][1]);
+							symbolTable[idCount-1][1] = symbolTable[Integer.parseInt(temp[1])-1][1];
 						}
 						output.add("<"+tokens.get("id")+", "+idCount+">");
 					}
@@ -437,7 +424,7 @@ public class MyLexer
 				}
 				System.out.println("\n\n\tSymbol table");
 				for(int i = 0; i < ml.symbolTable.length;i++)
-					System.out.println(ml.symbolTable[i][0] + "\t" + ml.symbolTable[i][1] + "\t" + ml.symbolTable[i][2]);
+					System.out.println(String.format("%-10s %-10s %s",ml.symbolTable[i][0], ml.symbolTable[i][1], ml.symbolTable[i][2]));
 			}
 		}
 		System.out.println("");
