@@ -87,21 +87,23 @@ public class MyLexer
 				i++;
 				peek = fileContents.charAt(i);
 			}
+			//check if t matches an id or keyword
 			if(t.matches("[A-Za-z]"))
 			{
 				i++;
-				while((Character.isLetter(peek) || Character.isDigit(peek) || peek == '_')/* && tokens.get(peek) == null && peek != ' ' && peek != '\t' && peek != '\n'*/)
+				while((Character.isLetter(peek) || Character.isDigit(peek) || peek == '_'))
 				{
-					i++;
-					t+= peek;
-					peek = fileContents.charAt(i);
+						i++;
+						t+= peek;
+						peek = fileContents.charAt(i);
 				}
 				if(tokens.get(t) != null)
+				{
 					if(tokens.get(t).equals("Prim_type"))
 						output.add("<"+tokens.get(t)+", "+ t+">");
 					else
 						output.add("<"+tokens.get(t)+">");
-
+				}
 				else if(t.equals("System") || t.equals("out"))
 				{
 					if(peek == '.')
@@ -120,7 +122,6 @@ public class MyLexer
 				{
 					if(isNewSymbol(t))
 					{	
-						
 						idCount++;
 						addToTable(t);
 						symbolTable[idCount-1][1] = "no type";
@@ -132,8 +133,6 @@ public class MyLexer
 						output.add("<"+tokens.get("id")+", " + getSymbolNum(t) + ">");
 					}
 				}
-				if(tokens.get(peek) != null)
-					output.add("<"+tokens.get(peek)+">");
 				if(tokens.get(Character.toString(peek)) != null)
 					output.add("<"+tokens.get(Character.toString(peek))+">");
 				//System.out.println("t: " + t + " peek: " + peek);
@@ -243,7 +242,7 @@ public class MyLexer
 			//output error if t doesnt match a valid token type
 			else
 			{
-				//System.out.println("Error " + t);
+			//System.out.println("Error " + t);
 				t = "";
 			}
 		}
@@ -306,28 +305,28 @@ public class MyLexer
 			ml.readTokens(argc[0]);
 			ml.readJavaFile(argc[1]);
 			ml.parse();
-			/*System.out.println("Printing input file contents:\n" + ml.fileContents);
-			System.out.println("Printing token list:");*/
-			/*Iterator it = ml.tokens.entrySet().iterator();
-			while(it.hasNext())
+		/*System.out.println("Printing input file contents:\n" + ml.fileContents);
+		System.out.println("Printing token list:");*/
+		/*Iterator it = ml.tokens.entrySet().iterator();
+		while(it.hasNext())
+		{
+			Map.Entry pair = (Map.Entry)it.next();
+			System.out.println(pair.getKey() + " " + pair.getValue());
+			it.remove();
+		}*/
+		if(!ml.errorFound)
+		{
+			for(int i = 0; i < ml.output.size(); i++)
 			{
-				Map.Entry pair = (Map.Entry)it.next();
-				System.out.println(pair.getKey() + " " + pair.getValue());
-				it.remove();
-			}*/
-			if(!ml.errorFound)
-			{
-				for(int i = 0; i < ml.output.size(); i++)
-				{
-					System.out.print(ml.output.get(i) + " ");
-					if ((i+1)%8 == 0)
-						System.out.println("");
-				}
-				System.out.println("\n\tSymbol table");
-				for(int i = 0; i < ml.symbolTable.length;i++)
-					System.out.println(ml.symbolTable[i][0] + "\t" + ml.symbolTable[i][1] + "\t" + ml.symbolTable[i][2]);
+				System.out.print(ml.output.get(i) + " ");
+				if ((i+1)%8 == 0)
+					System.out.println("");
 			}
+			System.out.println("\n\tSymbol table");
+			for(int i = 0; i < ml.symbolTable.length;i++)
+				System.out.println(ml.symbolTable[i][0] + "\t" + ml.symbolTable[i][1] + "\t" + ml.symbolTable[i][2]);
 		}
-		System.out.println("");
+	}
+	System.out.println("");
 	}
 }
