@@ -123,35 +123,32 @@ public class MyLexer
 						output.add("<"+tokens.get("id")+", " + getSymbolNum(t) + ">");
 					}
 				}
+				if(tokens.get(Character.toString(peek)) != null)
+					output.add("<"+tokens.get(Character.toString(peek))+">");
+				System.out.println("t: " + t + " peek: " + peek);
 				t = "";
 			}
 			//check if t matches a number
 			else if (t.matches("[0-9]"))
 			{
-				System.out.println("=============================");
-				System.out.println("found first number: "+t);
-				System.out.println("entered with peek at: "+peek);
 				i++;
 				while(Character.isDigit(peek) || peek == '.')
 				{
-					System.out.println("------------------------");
 					t+=peek;
 					i++;
 					if(peek == '.') {
 						i++;
-					} 
-
-					System.out.println("middle t now: "+t);
-
+					}
 					peek = fileContents.charAt(i);
-					System.out.println("peek now at: "+peek);
-
-					//if (peek == '.') System.out.println("found period in number");
 				}
-				if(t.matches("[0-9]+(?:\\.[0-9]+)?"))
+				if (Character.isLetter(peek))
 				{
-					System.out.println("num: "+t);
-					output.add("<"+tokens.get("num")+">");
+					errorFound = true;
+					System.out.println("Error on line " + lineCount + ": No such lexeme can be matched");
+				}
+				else if(t.matches("[0-9]+(?:\\.[0-9]+)?"))
+				{
+					output.add("<"+tokens.get("num")+", " + t+">");
 				}
 				else
 					System.out.println("Error in num: "+t);
@@ -263,7 +260,6 @@ public class MyLexer
 		{
 			Scanner sc = new Scanner(new File(fname));
 			fileContents = sc.useDelimiter("\\Z").next();
-			System.out.println(fileContents);
 			sc.close();
 		}catch(IOException ioe)
 		{
@@ -273,7 +269,7 @@ public class MyLexer
 
 	public static void main(String argc[])
 	{
-		System.out.println(argc[1]);
+		System.out.println("");
 		MyLexer ml = new MyLexer();
 		if(argc.length < 2)
 			System.out.println("Error missing input file.");
@@ -304,5 +300,6 @@ public class MyLexer
 					System.out.println(ml.symbolTable[i][0] + "\t" + ml.symbolTable[i][1] + "\t" + ml.symbolTable[i][2]);
 			}
 		}
+		System.out.println("");
 	}
 }
