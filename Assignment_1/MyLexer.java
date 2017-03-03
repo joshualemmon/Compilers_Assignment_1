@@ -91,12 +91,14 @@ public class MyLexer
 			if(t.matches("[A-Za-z]"))
 			{
 				i++;
+				//loop until an invalid id character is met
 				while((Character.isLetter(peek) || Character.isDigit(peek) || peek == '_'))
 				{
 						i++;
 						t+= peek;
 						peek = fileContents.charAt(i);
 				}
+				//check if t is a keyword
 				if(tokens.get(t) != null)
 				{
 					if(tokens.get(t).equals("Prim_type"))
@@ -104,6 +106,7 @@ public class MyLexer
 					else
 						output.add("<"+tokens.get(t)+">");
 				}
+				//check if t is a ref with a dot operator
 				else if(t.equals("System") || t.equals("out"))
 				{
 					if(peek == '.')
@@ -112,14 +115,16 @@ public class MyLexer
 						peek = fileContents.charAt(i+1);
 					}
 				}
+				//check if t is a ref
 				else if(t.equals("String"))
-				{
 					output.add("<"+tokens.get("ref")+", "+t+">");
-				}
+				//check if t is a call
 				else if(t.equals("println") || t.equals("print"))
 					output.add("<"+tokens.get("call")+", "+t+">");
+				//check if t is an id
 				else
 				{
+					//if t is a new id
 					if(isNewSymbol(t))
 					{	
 						idCount++;
@@ -128,44 +133,87 @@ public class MyLexer
 						symbolTable[idCount-1][2] = "no value";
 						output.add("<"+tokens.get("id")+", "+idCount+">");
 					}
+					//if t is already defined
 					else
-					{
 						output.add("<"+tokens.get("id")+", " + getSymbolNum(t) + ">");
-					}
 				}
+				//check if peek is a terminal and not whitespace
 				if(tokens.get(Character.toString(peek)) != null)
-					output.add("<"+tokens.get(Character.toString(peek))+">");
-				//System.out.println("t: " + t + " peek: " + peek);
+				{
+					//if peek is +,-,*,<,>,=
+					if(tokens.get(Character.toString(peek)).equals("T_binary_op") || tokens.get(Character.toString(peek)).equals("Comp_op")|| peek == '=' || peek == '!')
+					{
+						//start parsing the operators/comparators
+						t = Character.toString(peek);
+						peek = fileContents.charAt(i+1);
+						//check if the operator is going to be ++, --, *=, -=, +=, ==, !=
+						if(peek == '-' || peek == '+' || peek == '=' || peek == '!')
+						{
+							t+=peek;
+							i++;
+							output.add("<" + tokens.get(t) +", '"+t+ "' >");
+						}
+						//don't want to include '=' or '!' in token
+						else if(t.equals("=") || t.equals("!"))
+							output.add("<"+tokens.get("=")+">");
+						//add t to output
+						else
+							output.add("<" + tokens.get(t)+", '" + t+"' >");
+					}
+					//add peek to output if its not an operator, comparator or assignment
+					else
+						output.add("<" + tokens.get(Character.toString(peek)) +">");
+				}
 				t = "";
 			}
 			//check if t matches a number
 			else if (t.matches("[0-9]"))
 			{
 				i++;
+				//loop while peek is a valid character for a number
 				while(Character.isDigit(peek) || peek == '.')
 				{
 					t+=peek;
 					i++;
-					if(peek == '.') {
+					if(peek == '.')
 						i++;
-					}
 					peek = fileContents.charAt(i);
 				}
+				//check if a character appears after number, if true output error
 				if (Character.isLetter(peek))
 				{
 					errorFound = true;
 					System.out.println("Error on line " + lineCount + ": No such lexeme can be matched");
 				}
+				//check if t matches valid number pattern
 				else if(t.matches("[0-9]+(?:\\.[0-9]+)?"))
-				{
 					output.add("<"+tokens.get("num")+", " + t+">");
-				}
 				else
 					System.out.println("Error in num: "+t);
+				//check if peek is a terminal and not whitespace
 				if(tokens.get(Character.toString(peek)) != null)
 				{
-					if(tokens.get(Character.toString(peek)).equals("T_binary_op") || tokens.get(Character.toString(peek)).equals("Comp_op"))
-						output.add("<" + tokens.get(Character.toString(peek)) +", '"+peek+ "'>");
+					//if peek is +,-,*,<,>,=
+					if(tokens.get(Character.toString(peek)).equals("T_binary_op") || tokens.get(Character.toString(peek)).equals("Comp_op")|| peek == '=' || peek == '!')
+					{
+						//start parsing the operators/comparators
+						t = Character.toString(peek);
+						peek = fileContents.charAt(i+1);
+						//check if the operator is going to be ++, --, *=, -=, +=, ==, !=
+						if(peek == '-' || peek == '+' || peek == '=' || peek == '!')
+						{
+							t+=peek;
+							i++;
+							output.add("<" + tokens.get(t) + ", '" + t + "' >");
+						}
+						//don't want to include '=' and '!' in token
+						else if(t.equals("=") || t.equals("!"))
+							output.add("<" + tokens.get("=") + ">");
+						//add t to output
+						else
+							output.add("<" + tokens.get(t)+", '" + t + "' >");
+					}
+					//add peek to output if its not an operator, comparator or assignment
 					else
 						output.add("<" + tokens.get(Character.toString(peek)) +">");
 				}
@@ -174,24 +222,29 @@ public class MyLexer
 			//check if t is the beginning of a string literal
 			else if(t.matches("\""))
 			{
+				//loop until peek is a " character
 				while(peek != '\"')
 				{
 					t+=peek;
 					i++;
 					peek = fileContents.charAt(i);
 				}
+				//add " to t
 				t+=peek;
 				i++;
+				//add the literal to output
 				output.add("<" +tokens.get("\"..\"")+">");
 				peek = fileContents.charAt(i);
+				//check if terminal comes right after the literal and add it to output if true
 				if(tokens.get(Character.toString(peek)) != null)
 					output.add("<"+tokens.get(Character.toString(peek))+">");
 				t ="";
 			}
-			//check if t is a comment
+			//check if t is a single line comment
 			else if(t.matches("/") && peek == '/')
 			{
 				i+=2;
+				//loop until end of line
 				while(peek != '\n')
 				{
 					t+=peek;
@@ -201,11 +254,13 @@ public class MyLexer
 				lineCount++;
 				t = "";
 			}
+			//check if t is a multiline comment
 			else if(t.matches("/") && peek == '*')
 			{
 				t+=peek;
 				i+=2;
 				peek = fileContents.charAt(i);
+				//loop until the next */ gets reached
 				while(peek != '*' && fileContents.charAt(i+1) != '/')
 				{
 					if(peek == '\n')
@@ -218,33 +273,33 @@ public class MyLexer
 				t+=fileContents.charAt(i++);
 				t = "";
 			}
-			//check if t is part of a 2-character operator
-			else if(tokens.get(t+Character.toString(peek)) != null)
-			{
-				System.out.println(t);
-				t+=peek;
-				output.add("<" + tokens.get(t) + ">");
-				i++;
-				t = "";
-			}
-			//check if t is just a single character terminal
+			//check if t is a terminal
 			else if(tokens.get(t) != null)
 			{
-				System.out.println("Single character terminal: " +t + "terminal peek: "+peek);
-				if(tokens.get(t).equals("T_binary_op") || tokens.get(t).equals("Comp_op"))
+				//if t is an operator, comparator or assignment
+				if(tokens.get(t).equals("T_binary_op") || tokens.get(t).equals("Comp_op") || t.equals("=") || t.equals("!"))
 				{
-					output.add("<" + tokens.get(t) +", '"+t+ "'>");
+					//check if next character makes a 2-character terminal(++,--,>=,<=,==,!=)
+					if(peek == '-' || peek == '+' || peek == '=' || peek == '!')
+					{
+						t+=peek;
+						output.add("<" + tokens.get(t) + ", '" + t + "' >");
+					}
+					else
+					{ 
+						if(t.equals("=") || t.equals("!"))
+							output.add("<" + tokens.get(t) + ">");
+						else
+							output.add("<" + tokens.get(t) + ", '" + t + "' >");
+					}
 				}
 				else
 					output.add("<" + tokens.get(t) +">");
 				t = "";
 			}
-			//output error if t doesnt match a valid token type
+			//if t isn't a valid(e.g. is whitespace) token set it to empty for next iteration
 			else
-			{
-			//System.out.println("Error " + t);
 				t = "";
-			}
 		}
 	}
 
@@ -302,31 +357,25 @@ public class MyLexer
 			System.out.println("Error missing input file.");
 		else
 		{
+			//read in the token file
 			ml.readTokens(argc[0]);
+			//read in the file to parse
 			ml.readJavaFile(argc[1]);
+			//begin parsing
 			ml.parse();
-		/*System.out.println("Printing input file contents:\n" + ml.fileContents);
-		System.out.println("Printing token list:");*/
-		/*Iterator it = ml.tokens.entrySet().iterator();
-		while(it.hasNext())
-		{
-			Map.Entry pair = (Map.Entry)it.next();
-			System.out.println(pair.getKey() + " " + pair.getValue());
-			it.remove();
-		}*/
-		if(!ml.errorFound)
-		{
-			for(int i = 0; i < ml.output.size(); i++)
+			if(!ml.errorFound)
 			{
-				System.out.print(ml.output.get(i) + " ");
-				if ((i+1)%8 == 0)
-					System.out.println("");
+				for(int i = 0; i < ml.output.size(); i++)
+				{
+					System.out.print(ml.output.get(i) + " ");
+					if ((i+1)%8 == 0)
+						System.out.println("");
+				}
+				System.out.println("\n\n\tSymbol table");
+				for(int i = 0; i < ml.symbolTable.length;i++)
+					System.out.println(ml.symbolTable[i][0] + "\t" + ml.symbolTable[i][1] + "\t" + ml.symbolTable[i][2]);
 			}
-			System.out.println("\n\tSymbol table");
-			for(int i = 0; i < ml.symbolTable.length;i++)
-				System.out.println(ml.symbolTable[i][0] + "\t" + ml.symbolTable[i][1] + "\t" + ml.symbolTable[i][2]);
 		}
-	}
-	System.out.println("");
+		System.out.println("");
 	}
 }
