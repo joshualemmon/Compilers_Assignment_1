@@ -97,14 +97,23 @@ public class MyLexer
 					peek = fileContents.charAt(i);
 				}
 				if(tokens.get(t) != null)
-					output.add("<"+tokens.get(t)+">");
+					if(tokens.get(t).equals("Prim_type"))
+						output.add("<"+tokens.get(t)+", "+ t+">");
+					else
+						output.add("<"+tokens.get(t)+">");
+
 				else if(t.equals("System") || t.equals("out"))
 				{
 					if(peek == '.')
+					{
 						output.add("<"+tokens.get("ref")+", "+t+">");
+						peek = fileContents.charAt(i+1);
+					}
 				}
 				else if(t.equals("String"))
+				{
 					output.add("<"+tokens.get("ref")+", "+t+">");
+				}
 				else if(t.equals("println") || t.equals("print"))
 					output.add("<"+tokens.get("call")+", "+t+">");
 				else
@@ -114,7 +123,7 @@ public class MyLexer
 						
 						idCount++;
 						addToTable(t);
-						symbolTable[idCount-1][1] = "no value";
+						symbolTable[idCount-1][1] = "no type";
 						symbolTable[idCount-1][2] = "no value";
 						output.add("<"+tokens.get("id")+", "+idCount+">");
 					}
@@ -123,9 +132,11 @@ public class MyLexer
 						output.add("<"+tokens.get("id")+", " + getSymbolNum(t) + ">");
 					}
 				}
+				if(tokens.get(peek) != null)
+					output.add("<"+tokens.get(peek)+">");
 				if(tokens.get(Character.toString(peek)) != null)
 					output.add("<"+tokens.get(Character.toString(peek))+">");
-				System.out.println("t: " + t + " peek: " + peek);
+				//System.out.println("t: " + t + " peek: " + peek);
 				t = "";
 			}
 			//check if t matches a number
@@ -152,6 +163,13 @@ public class MyLexer
 				}
 				else
 					System.out.println("Error in num: "+t);
+				if(tokens.get(Character.toString(peek)) != null)
+				{
+					if(tokens.get(Character.toString(peek)).equals("T_binary_op") || tokens.get(Character.toString(peek)).equals("Comp_op"))
+						output.add("<" + tokens.get(Character.toString(peek)) +", '"+peek+ "'>");
+					else
+						output.add("<" + tokens.get(Character.toString(peek)) +">");
+				}
 				t = "";
 			}
 			//check if t is the beginning of a string literal
@@ -166,6 +184,9 @@ public class MyLexer
 				t+=peek;
 				i++;
 				output.add("<" +tokens.get("\"..\"")+">");
+				peek = fileContents.charAt(i);
+				if(tokens.get(Character.toString(peek)) != null)
+					output.add("<"+tokens.get(Character.toString(peek))+">");
 				t ="";
 			}
 			//check if t is a comment
@@ -199,17 +220,24 @@ public class MyLexer
 				t = "";
 			}
 			//check if t is part of a 2-character operator
-			else if(tokens.get((t+peek)) != null)
+			else if(tokens.get(t+Character.toString(peek)) != null)
 			{
-				System.out.println("compare: " + t+peek);
-				output.add("<" + tokens.get(t+peek) + ">");
+				System.out.println(t);
+				t+=peek;
+				output.add("<" + tokens.get(t) + ">");
 				i++;
 				t = "";
 			}
 			//check if t is just a single character terminal
 			else if(tokens.get(t) != null)
 			{
-				output.add("<" + tokens.get(t) + ">");
+				System.out.println("Single character terminal: " +t + "terminal peek: "+peek);
+				if(tokens.get(t).equals("T_binary_op") || tokens.get(t).equals("Comp_op"))
+				{
+					output.add("<" + tokens.get(t) +", '"+t+ "'>");
+				}
+				else
+					output.add("<" + tokens.get(t) +">");
 				t = "";
 			}
 			//output error if t doesnt match a valid token type
