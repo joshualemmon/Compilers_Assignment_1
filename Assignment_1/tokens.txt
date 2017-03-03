@@ -23,7 +23,7 @@ public	T_public
 static	T_static
 class	T_class
 void	T_void
-Main	T_main
+main	T_main
 if      T_if
 else    T_else
 for     T_for

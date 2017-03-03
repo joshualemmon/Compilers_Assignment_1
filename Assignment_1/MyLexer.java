@@ -17,13 +17,52 @@ public class MyLexer
 	//declaring containers
 	String fileContents = new String();
 	List<String> output = new ArrayList<String>();
-	List<List<String>> symbolTable = new ArrayList<List<String>>();
+	String[][] symbolTable = new String[1][3];
 	Map<String,String> tokens = new HashMap<String, String>();
+	int idCount = 0;
+	int lineCount = 1;
+	boolean errorFound = false;
+
+	public String getSymbolNum(String t)
+	{
+		for(int i=0; i< symbolTable.length;i++)
+			if(symbolTable[i][0].equals(t))
+				return Integer.toString(i+1);
+		return "";
+	}
+
+	public void addToTable(String t)
+	{
+		if(idCount > symbolTable.length)
+		{
+			String[][] temp = new String[idCount][3];
+			for(int i = 0; i < symbolTable.length;i++)
+			{
+				temp[i] = symbolTable[i];
+			}
+			temp[idCount-1][0] = t;
+			symbolTable = new String[idCount][3];
+			symbolTable = temp;
+		}
+		else
+		{
+			symbolTable[idCount-1][0] = t;
+		}
+	}
+
+	public boolean isNewSymbol(String t)
+	{
+		for(int i = 0; i < symbolTable.length;i++)
+		{
+			if(t.equals(symbolTable[i][0]))
+				return false;
+		}
+		return true;
+	}
 
 	public void parse()
 	{
 		String t = new String();
-		//System.out.println(fileContents.length());
 		for(int i = 0; i < fileContents.length(); i++)
 		{
 			//get current character
@@ -33,63 +72,156 @@ public class MyLexer
 			//check if at end of file
 			if (i != fileContents.length()-1)
 				peek = fileContents.charAt(i+1);
-			//
+			//add current char to current token string t
 			t += currChar;
 
-			if(t.matches("[A-Za-z]+[\\w]*"))
+			//check if t matches a variable name
+			if(peek == '\n')
 			{
-				System.out.println("id " + t);
-				//output.add(t);
+				lineCount++;
+				i++;
+				peek = fileContents.charAt(i);
+			}
+			if(peek == '\t')
+			{
+				i++;
+				peek = fileContents.charAt(i);
+			}
+			if(t.matches("[A-Za-z]"))
+			{
+				i++;
+				while((Character.isLetter(peek) || Character.isDigit(peek) || peek == '_')/* && tokens.get(peek) == null && peek != ' ' && peek != '\t' && peek != '\n'*/)
+				{
+					i++;
+					t+= peek;
+					peek = fileContents.charAt(i);
+				}
+				if(tokens.get(t) != null)
+					output.add("<"+tokens.get(t)+">");
+				else if(t.equals("System") || t.equals("out"))
+				{
+					if(peek == '.')
+						output.add("<"+tokens.get("ref")+", "+t+">");
+				}
+				else if(t.equals("String"))
+					output.add("<"+tokens.get("ref")+", "+t+">");
+				else if(t.equals("println") || t.equals("print"))
+					output.add("<"+tokens.get("call")+", "+t+">");
+				else
+				{
+					if(isNewSymbol(t))
+					{	
+						
+						idCount++;
+						addToTable(t);
+						symbolTable[idCount-1][1] = "no value";
+						symbolTable[idCount-1][2] = "no value";
+						output.add("<"+tokens.get("id")+", "+idCount+">");
+					}
+					else
+					{
+						output.add("<"+tokens.get("id")+", " + getSymbolNum(t) + ">");
+					}
+				}
 				t = "";
 			}
-			else if (t.matches("-?[0-9]+(.[0-9]+)?"))
+			//check if t matches a number
+			else if (t.matches("[0-9]"))
 			{
-				System.out.println("num " + t);
-				//output.add(t);
+				System.out.println("=============================");
+				System.out.println("found first number: "+t);
+				System.out.println("entered with peek at: "+peek);
+				i++;
+				while(Character.isDigit(peek) || peek == '.')
+				{
+					System.out.println("------------------------");
+					t+=peek;
+					i++;
+					if(peek == '.') {
+						i++;
+					} 
+
+					System.out.println("middle t now: "+t);
+
+					peek = fileContents.charAt(i);
+					System.out.println("peek now at: "+peek);
+
+					//if (peek == '.') System.out.println("found period in number");
+				}
+				if(t.matches("[0-9]+(?:\\.[0-9]+)?"))
+				{
+					System.out.println("num: "+t);
+					output.add("<"+tokens.get("num")+">");
+				}
+				else
+					System.out.println("Error in num: "+t);
 				t = "";
 			}
+			//check if t is the beginning of a string literal
 			else if(t.matches("\""))
 			{
-				while(peek != '\"	')
+				while(peek != '\"')
 				{
 					t+=peek;
-					peek = fileContents.charAt(i++);
+					i++;
+					peek = fileContents.charAt(i);
 				}
-				output.add("<" +tokens.get("..")+">");
+				t+=peek;
+				i++;
+				output.add("<" +tokens.get("\"..\"")+">");
 				t ="";
 			}
-			else if(t.matches("[//][\\w]*"))
+			//check if t is a comment
+			else if(t.matches("/") && peek == '/')
 			{
+				i+=2;
 				while(peek != '\n')
 				{
 					t+=peek;
-					peek = fileContents.charAt(i++);
+					i++;
+					peek = fileContents.charAt(i);
 				}
+				lineCount++;
 				t = "";
 			}
-			//else if(t.matches("[/*][[\\w]*[\*/]"))
-			//{
-			//	t = "";
-			//}
-			else if(tokens.get(t+peek) != null)
+			else if(t.matches("/") && peek == '*')
 			{
+				t+=peek;
+				i+=2;
+				peek = fileContents.charAt(i);
+				while(peek != '*' && fileContents.charAt(i+1) != '/')
+				{
+					if(peek == '\n')
+						lineCount++;
+					t+=peek;
+					peek = fileContents.charAt(i++);
+				}
+				t+=peek;
+				t+=fileContents.charAt(i++);
+				t+=fileContents.charAt(i++);
+				t = "";
+			}
+			//check if t is part of a 2-character operator
+			else if(tokens.get((t+peek)) != null)
+			{
+				System.out.println("compare: " + t+peek);
 				output.add("<" + tokens.get(t+peek) + ">");
 				i++;
 				t = "";
 			}
+			//check if t is just a single character terminal
 			else if(tokens.get(t) != null)
 			{
 				output.add("<" + tokens.get(t) + ">");
 				t = "";
 			}
+			//output error if t doesnt match a valid token type
 			else
 			{
-				System.out.println("Error "+t);
-				output.add(t);
+				//System.out.println("Error " + t);
 				t = "";
 			}
 		}
-
 	}
 
 	//reads in tokens and puts them in the tokens hashmap
@@ -151,19 +283,25 @@ public class MyLexer
 			ml.readJavaFile(argc[1]);
 			ml.parse();
 			/*System.out.println("Printing input file contents:\n" + ml.fileContents);
-			System.out.println("Printing token list:");
-			Iterator it = ml.tokens.entrySet().iterator();
+			System.out.println("Printing token list:");*/
+			/*Iterator it = ml.tokens.entrySet().iterator();
 			while(it.hasNext())
 			{
 				Map.Entry pair = (Map.Entry)it.next();
-				System.out.println(pair.getKey() + " " + pair.get());
+				System.out.println(pair.getKey() + " " + pair.getValue());
 				it.remove();
 			}*/
-			for(int i = 0; i < ml.output.size(); i++)
+			if(!ml.errorFound)
 			{
-				System.out.print(ml.output.get(i) + " ");
-				if(i%5 == 0 && i != 0)
-					System.out.println();
+				for(int i = 0; i < ml.output.size(); i++)
+				{
+					System.out.print(ml.output.get(i) + " ");
+					if ((i+1)%8 == 0)
+						System.out.println("");
+				}
+				System.out.println("\n\tSymbol table");
+				for(int i = 0; i < ml.symbolTable.length;i++)
+					System.out.println(ml.symbolTable[i][0] + "\t" + ml.symbolTable[i][1] + "\t" + ml.symbolTable[i][2]);
 			}
 		}
 	}
